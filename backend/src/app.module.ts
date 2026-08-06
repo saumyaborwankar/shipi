@@ -4,7 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getDatabaseConfig } from './config/database.config';
-import { ItemsModule } from './items/items.module';
+import { AuthModule } from './auth/auth.module';
+import { VaultsModule } from './vaults/vaults.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -13,7 +15,9 @@ import { ItemsModule } from './items/items.module';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
-    ItemsModule,
+    AuthModule,
+    VaultsModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
