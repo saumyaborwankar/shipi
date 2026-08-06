@@ -2,6 +2,14 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { IPC } from '../shared/ipc';
 import * as fsService from './fsService';
 import { getVaultName, getVaultRoot } from './vault';
+import {
+  getSyncStatus,
+  syncNow,
+  syncPush,
+  syncSignIn,
+  syncSignOut,
+  syncSignUp,
+} from './sync';
 
 export function registerIpc(): void {
   ipcMain.handle(IPC.vaultInfo, () => ({
@@ -32,6 +40,22 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.fsDelete, (_e, relPath: string) => {
     fsService.deleteEntry(relPath);
   });
+
+  ipcMain.handle(IPC.syncStatus, () => getSyncStatus());
+
+  ipcMain.handle(IPC.syncSignUp, (_e, email: string, password: string) =>
+    syncSignUp(email, password),
+  );
+
+  ipcMain.handle(IPC.syncSignIn, (_e, email: string, password: string) =>
+    syncSignIn(email, password),
+  );
+
+  ipcMain.handle(IPC.syncSignOut, () => syncSignOut());
+
+  ipcMain.handle(IPC.syncNow, () => syncNow());
+
+  ipcMain.handle(IPC.syncPush, () => syncPush());
 
   ipcMain.handle(IPC.windowIsMaximized, (e) =>
     BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false,

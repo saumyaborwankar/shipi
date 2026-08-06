@@ -25,7 +25,7 @@ Electron app (this side)                    shipi-backend
 
 | Item | Value |
 |---|---|
-| Base URL | `http://localhost:3000` (dev) / your deployed HTTPS URL |
+| Base URL | `http://localhost:3001` (dev — **3000 is taken by the electron-forge webpack dev server**; run backend as `PORT=3001 npm run start:dev`) / your deployed HTTPS URL |
 | Auth | `Authorization: Bearer <accessToken>` |
 | Content type | `application/json` |
 | Encrypted file fields | base64 strings |
@@ -444,3 +444,17 @@ export const api = {
 - No file rename/move endpoint in MVP — delete + re-push.
 - Full-text search is client-side only (server can't see plaintext).
 - `DELETE /vaults/:vaultId` permanently removes the vault and all versions.
+
+---
+
+## 13. Native-app sync client (implemented)
+
+`native-app/src/main/sync.ts` is the sync engine in the Electron main process; the renderer drives it through IPC (`window.shipi.syncSignIn/signUp/signOut/syncNow/syncPush`), surfaced in the **Sync panel** at the bottom of the sidebar.
+
+- **VMK lifecycle:** a 32-byte VMK is generated on first sign-in and persisted (base64) in `sync-state.json` under Electron `userData`. Only its SHA-256 fingerprint is sent to the server when linking/creating the remote vault.
+- **Encryption:** per-file `AES-256-GCM` with a fresh 12-byte IV; envelope `{ iv, authTag, data }` matches the server DTO exactly (padded base64 `authTag` is accepted — the backend accepts both padded and unpadded).
+- **Push:** every `.md` file is encrypted and upserted with `baseVersion = <last-known versionNo>` (or `0` for new files). Unchanged files (same plaintext SHA-256) are skipped. Files deleted locally are `DELETE`d remotely.
+- **Pull:** remote files are decrypted and written locally (creating folders by path). If a local file was edited since the last sync, the remote version is saved as a `<name>-conflict-<timestamp>.md` copy and the local edit wins the path.
+- **Push 409:** the remote version is fetched and wins the path; the local edit is preserved as `<name>-conflict-<timestamp>.md`.
+- **Auto-sync:** a debounced `syncPush()` runs after every save (600 ms) and on Cmd/Ctrl+S; the manual **Sync** button runs pull + push. App start shows current status; re-login is required on `401` (token expiry).
+- **Dev port:** the app defaults to `http://localhost:3001` (override with `SHIPI_API_URL`) because the electron-forge webpack dev server occupies `:3000`.

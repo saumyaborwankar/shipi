@@ -19,7 +19,7 @@ export class UpsertFileDto {
   iv!: string;
 
   @IsString()
-  @Matches(/^[A-Za-z0-9+/]{24}$/, {
+  @Matches(/^(?:[A-Za-z0-9+/]{22}==|[A-Za-z0-9+/]{24})$/, {
     message: 'authTag must be base64 of a 16-byte GCM tag',
   })
   authTag!: string;

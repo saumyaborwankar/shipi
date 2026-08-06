@@ -6,10 +6,15 @@ import { EditorPane } from './components/EditorPane';
 
 export function App(): React.ReactElement {
   const loadVault = useStore((s) => s.loadVault);
+  const loadSync = useStore((s) => s.loadSync);
+  const subscribeSync = useStore((s) => s.subscribeSync);
 
   useEffect(() => {
     void loadVault();
-  }, [loadVault]);
+    void loadSync();
+    const unsubscribe = subscribeSync();
+    return unsubscribe;
+  }, [loadVault, loadSync, subscribeSync]);
 
   return (
     <div className="app">

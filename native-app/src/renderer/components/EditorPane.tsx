@@ -27,7 +27,10 @@ export function EditorPane(): React.ReactElement {
       return;
     }
     const timer = setTimeout(() => {
-      void window.shipi.writeFile(selectedPath, content).then(() => markSaved());
+      void window.shipi.writeFile(selectedPath, content).then(() => {
+        markSaved();
+        void useStore.getState().syncPush();
+      });
     }, SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [content, dirty, selectedPath, markSaved]);
@@ -36,7 +39,10 @@ export function EditorPane(): React.ReactElement {
     const onKeyDown = (e: KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's' && selectedPath && dirty) {
         e.preventDefault();
-        void window.shipi.writeFile(selectedPath, content).then(() => markSaved());
+        void window.shipi.writeFile(selectedPath, content).then(() => {
+          markSaved();
+          void useStore.getState().syncPush();
+        });
       }
     };
     window.addEventListener('keydown', onKeyDown);

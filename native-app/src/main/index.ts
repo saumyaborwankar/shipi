@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import { IPC } from '../shared/ipc';
 import { registerIpc } from './ipc';
 import { ensureVault } from './vault';
+import { initSync } from './sync';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -46,6 +47,7 @@ const createWindow = (): void => {
 
 app.on('ready', () => {
   registerIpc();
+  initSync();
   createWindow();
 });
 

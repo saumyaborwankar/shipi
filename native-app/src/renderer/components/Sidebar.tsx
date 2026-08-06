@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../state/store';
 import { InlineInput } from './InlineInput';
 import { TreeItem } from './TreeItem';
+import { SyncPanel } from './SyncPanel';
 
 export function Sidebar(): React.ReactElement {
   const tree = useStore((s) => s.tree);
@@ -45,6 +46,7 @@ export function Sidebar(): React.ReactElement {
         ))}
         {tree.length === 0 && <div className="sidebar__empty">Vault is empty</div>}
       </div>
+      <SyncPanel />
     </aside>
   );
 }

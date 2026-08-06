@@ -7,9 +7,14 @@ import { FileVersion } from './file-version.entity';
 import { BlobStorageService } from './blob-storage.service';
 import { PostgresBlobStorageService } from './postgres-blob-storage.service';
 import { VaultsModule } from '../vaults/vaults.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([File, FileVersion]), VaultsModule],
+  imports: [
+    TypeOrmModule.forFeature([File, FileVersion]),
+    VaultsModule,
+    AuthModule,
+  ],
   controllers: [FilesController],
   providers: [
     FilesService,

@@ -10,6 +10,8 @@ export interface VaultInfo {
   name: string;
 }
 
+import type { SyncStatus } from './sync';
+
 export const IPC = {
   vaultInfo: 'shipi:vault:info',
   vaultTree: 'shipi:vault:tree',
@@ -24,6 +26,13 @@ export const IPC = {
   windowClose: 'shipi:window:close',
   windowIsMaximized: 'shipi:window:is-maximized',
   windowMaximizeChange: 'shipi:window:maximize-change',
+  syncStatus: 'shipi:sync:status',
+  syncSignUp: 'shipi:sync:sign-up',
+  syncSignIn: 'shipi:sync:sign-in',
+  syncSignOut: 'shipi:sync:sign-out',
+  syncNow: 'shipi:sync:now',
+  syncPush: 'shipi:sync:push',
+  syncStateChange: 'shipi:sync:state-change',
 } as const;
 
 export interface ShipiApi {
@@ -41,4 +50,11 @@ export interface ShipiApi {
   isMaximized: () => Promise<boolean>;
   onMaximizeChange: (cb: (maximized: boolean) => void) => () => void;
   platform: string;
+  syncStatus: () => Promise<SyncStatus>;
+  syncSignUp: (email: string, password: string) => Promise<SyncStatus>;
+  syncSignIn: (email: string, password: string) => Promise<SyncStatus>;
+  syncSignOut: () => Promise<SyncStatus>;
+  syncNow: () => Promise<SyncStatus>;
+  syncPush: () => Promise<SyncStatus>;
+  onSyncStateChange: (cb: (status: SyncStatus) => void) => () => void;
 }
