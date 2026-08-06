@@ -1,11 +1,27 @@
 import { app, BrowserWindow } from 'electron';
 import * as crypto from 'node:crypto';
+import * as dotenv from 'dotenv';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { IPC } from '../shared/ipc';
 import { SyncFileEntry, SyncStatus } from '../shared/sync';
 import * as fsService from './fsService';
 import { getVaultName } from './vault';
+
+function loadEnvFile(): void {
+  const candidates = [
+    path.join(app.getAppPath(), '.env'),
+    path.join(process.cwd(), '.env'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      dotenv.config({ path: candidate });
+      return;
+    }
+  }
+}
+
+loadEnvFile();
 
 const DEFAULT_API_URL = process.env.SHIPI_API_URL ?? 'http://localhost:3001';
 
@@ -74,6 +90,9 @@ function loadState(): void {
     state = { ...EMPTY_STATE, ...JSON.parse(raw) };
   } catch {
     state = { ...EMPTY_STATE };
+  }
+  if (process.env.SHIPI_API_URL) {
+    state.apiUrl = process.env.SHIPI_API_URL;
   }
 }
 
