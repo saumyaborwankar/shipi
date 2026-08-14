@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { InlineInput } from '@/components/shipi/InlineInput';
 import { SyncPanel } from '@/components/shipi/SyncPanel';
@@ -48,7 +48,10 @@ export default function VaultScreen(): React.ReactElement {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}>
         <View style={styles.header}>
           <View style={styles.brand}>
             <View style={styles.logo}>
@@ -83,7 +86,8 @@ export default function VaultScreen(): React.ReactElement {
         <ScrollView
           style={styles.tree}
           contentContainerStyle={styles.treeContent}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}>
           {creating && (
             <View style={styles.createRoot}>
               <InlineInput
@@ -124,7 +128,7 @@ export default function VaultScreen(): React.ReactElement {
         </ScrollView>
 
         <SyncPanel />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -132,11 +136,11 @@ export default function VaultScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.canvas,
+    backgroundColor: colors.canvasSoft,
   },
   container: {
     flex: 1,
-    backgroundColor: colors.canvas,
+    backgroundColor: colors.canvasSoft,
   },
   header: {
     paddingHorizontal: spacing.md,

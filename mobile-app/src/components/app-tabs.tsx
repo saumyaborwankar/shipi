@@ -4,7 +4,7 @@ import { colors } from '@/theme/tokens';
 export default function AppTabs() {
   return (
     <NativeTabs
-      backgroundColor={colors.canvas}
+      backgroundColor={colors.canvasSoft}
       tintColor={colors.primary}
       iconColor={{ default: colors.inkFaint, selected: colors.primary }}
       labelStyle={{

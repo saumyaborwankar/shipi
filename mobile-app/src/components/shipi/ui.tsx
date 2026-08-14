@@ -108,6 +108,7 @@ export function Button({ children, onPress, variant = 'secondary', disabled, sty
       style={[
         styles.btn,
         BTN_BASE[variant],
+        variant === 'primary' && styles.btnPrimary,
         disabled && styles.btnDisabled,
         animStyle,
         style,
@@ -260,20 +261,24 @@ const styles = StyleSheet.create({
   btn: {
     borderWidth: 1,
     borderRadius: radius.md,
-    paddingVertical: spacing.xxs + 2,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: spacing.xs - 2,
   },
+  btnPrimary: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+  },
   btnDisabled: {
     opacity: 0.45,
   },
   btnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
+    fontSize: typography.button.fontSize,
+    fontWeight: typography.button.fontWeight,
+    lineHeight: typography.button.lineHeight,
   },
   btnTextWithIcon: {
     marginLeft: spacing.xxs,
@@ -299,7 +304,7 @@ const styles = StyleSheet.create({
   },
   seg: {
     flexDirection: 'row',
-    backgroundColor: colors.canvasSoft,
+    backgroundColor: colors.hairline,
     borderRadius: radius.md,
     padding: 3,
     gap: 2,
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
   },
   segSegmentActive: {
     backgroundColor: colors.surface,
-    shadowColor: '#3D3A33',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -334,10 +339,10 @@ const styles = StyleSheet.create({
   },
   field: {
     borderWidth: 1,
-    borderColor: colors.hairlineStrong,
-    borderRadius: radius.md,
-    paddingVertical: spacing.xs + 2,
-    paddingHorizontal: spacing.sm + 2,
+    borderColor: '#dddddd',
+    borderRadius: radius.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
     fontSize: 15,
     color: colors.ink,
     backgroundColor: colors.surface,

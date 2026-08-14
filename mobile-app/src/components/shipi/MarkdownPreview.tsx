@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   codeBlock: {
-    backgroundColor: colors.canvasSoft,
+    backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.hairline,

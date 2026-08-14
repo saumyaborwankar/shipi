@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 interface IconProps {
   color?: string;
@@ -17,8 +18,18 @@ function baseSvg(props: IconProps & { children: React.ReactNode }): React.ReactE
 
 export function ChevronIcon(props: IconProps & { open: boolean }): React.ReactElement {
   const { color = 'currentColor', size = 12, open } = props;
+  const rotation = useSharedValue(open ? 90 : 0);
+
+  useEffect(() => {
+    rotation.value = withTiming(open ? 90 : 0, { duration: 180 });
+  }, [open, rotation]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
-    <Svg
+    <AnimatedSvg
       width={size}
       height={size}
       viewBox="0 0 10 10"
@@ -27,11 +38,13 @@ export function ChevronIcon(props: IconProps & { open: boolean }): React.ReactEl
       strokeWidth={1.6}
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ transform: open ? [{ rotate: '90deg' }] : undefined }}>
+      style={animStyle}>
       <Path d="M3 1.5 L7 5 L3 8.5" />
-    </Svg>
+    </AnimatedSvg>
   );
 }
+
+const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 
 export function FileIcon(props: IconProps): React.ReactElement {
   return baseSvg({

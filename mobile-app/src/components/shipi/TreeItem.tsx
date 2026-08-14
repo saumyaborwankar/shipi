@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.hairline,
     borderWidth: 1,
-    shadowColor: '#3D3A33',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,

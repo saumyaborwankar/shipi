@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import { MarkdownEditor } from '@/components/shipi/MarkdownEditor';
 import { MarkdownPreview } from '@/components/shipi/MarkdownPreview';
 import { SegmentedControl, ShipiText } from '@/components/shipi/ui';
@@ -11,6 +17,7 @@ import { useStore } from '@/store';
 import { colors, spacing } from '@/theme/tokens';
 
 const SAVE_DEBOUNCE_MS = 600;
+const FOOTER_HEIGHT = 36;
 
 type EditorMode = 'source' | 'preview';
 const MODES = ['source', 'preview'] as const;
@@ -33,6 +40,27 @@ export default function EditorScreen(): React.ReactElement {
 
   const selectedName = selectedPath ? selectedPath.split('/').pop() : null;
   const words = useMemo(() => wordCount(content), [content]);
+
+  const keyboardProgress = useSharedValue(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardWillShow', (e) => {
+      keyboardProgress.value = withTiming(1, { duration: e.duration ?? 220 });
+    });
+    const hide = Keyboard.addListener('keyboardWillHide', (e) => {
+      keyboardProgress.value = withTiming(0, { duration: e.duration ?? 220 });
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [keyboardProgress]);
+
+  const footerAnim = useAnimatedStyle(() => ({
+    opacity: 1 - keyboardProgress.value,
+    transform: [{ translateY: interpolate(keyboardProgress.value, [0, 1], [0, FOOTER_HEIGHT]) }],
+    maxHeight: interpolate(keyboardProgress.value, [0, 1], [FOOTER_HEIGHT, 0]),
+  }));
 
   useEffect(() => {
     if (!selectedPath || !dirty) {
@@ -68,7 +96,10 @@ export default function EditorScreen(): React.ReactElement {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
             {dirty && <View style={styles.dirty} />}
@@ -93,13 +124,17 @@ export default function EditorScreen(): React.ReactElement {
           {mode === 'source' ? (
             <MarkdownEditor value={content} onChangeText={updateContent} />
           ) : (
-            <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.previewContent}>
+            <ScrollView
+              style={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+              contentContainerStyle={styles.previewContent}>
               <MarkdownPreview source={content} />
             </ScrollView>
           )}
         </View>
 
-        <View style={styles.footer}>
+        <Animated.View style={[styles.footer, footerAnim]}>
           <View style={styles.footerLeft}>
             {mode === 'source' ? (
               <EditIcon color={colors.inkFaint} size={13} />
@@ -113,8 +148,8 @@ export default function EditorScreen(): React.ReactElement {
           <ShipiText type="caption" color={dirty ? 'warning' : 'inkFaint'} style={{ fontSize: 12, fontWeight: '500' }}>
             {dirty ? 'Saving…' : 'Saved'}
           </ShipiText>
-        </View>
-      </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -122,11 +157,11 @@ export default function EditorScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.canvas,
+    backgroundColor: colors.canvasSoft,
   },
   container: {
     flex: 1,
-    backgroundColor: colors.canvas,
+    backgroundColor: colors.canvasSoft,
   },
   header: {
     paddingHorizontal: spacing.md,
@@ -150,7 +185,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs - 2,
     paddingVertical: 2,
     borderRadius: spacing.xs,
-    backgroundColor: colors.canvasSoft,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.hairline,
     marginLeft: 'auto',
   },
   body: {
@@ -167,10 +204,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    height: FOOTER_HEIGHT,
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
   footerLeft: {
     flexDirection: 'row',
