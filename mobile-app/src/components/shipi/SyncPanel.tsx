@@ -118,7 +118,8 @@ export function SyncPanel(): React.ReactElement {
             label="Password"
             value={password}
             onChangeText={setPassword}
-            placeholder="min 8 characters"
+            placeholder="at least 8 characters"
+            hint="min 8 characters"
             secureTextEntry
             onSubmitEditing={() => void submit()}
           />
@@ -126,13 +127,21 @@ export function SyncPanel(): React.ReactElement {
             variant="primary"
             onPress={() => void submit()}
             disabled={submitting}
+            loading={submitting}
             style={styles.submit}
             leading={<SyncIcon color={colors.onPrimary} size={16} />}>
-            {submitting ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            {mode === 'signin' ? 'Sign in' : 'Create account'}
           </Button>
           <Button variant="ghost" onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
             {mode === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in'}
           </Button>
+          <View style={styles.trust}>
+            <LockIcon color={colors.inkFaint} size={14} />
+            <ShipiText type="caption" color="inkFaint" style={styles.trustText}>
+              Zero-knowledge by design. Your key never leaves this device, so even Shipi
+              can&apos;t read your notes.
+            </ShipiText>
+          </View>
         </View>
         {sync.message && (
           <ShipiText type="caption" color="danger" style={styles.message}>
@@ -207,5 +216,17 @@ const styles = StyleSheet.create({
   },
   message: {
     marginTop: spacing.xs,
+  },
+  trust: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingTop: spacing.xxs,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+  },
+  trustText: {
+    flex: 1,
+    lineHeight: 18,
   },
 });

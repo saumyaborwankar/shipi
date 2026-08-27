@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { InlineInput } from '@/components/shipi/InlineInput';
 import { SyncPanel } from '@/components/shipi/SyncPanel';
 import { TreeItem } from '@/components/shipi/TreeItem';
-import { Button, Card, ShipiText } from '@/components/shipi/ui';
+import { Button, Card, EmptyState, ShipiText, Skeleton } from '@/components/shipi/ui';
 import { FolderIcon, PlusIcon, VaultIcon } from '@/components/shipi/Icons';
 import type { FileNode } from '@/lib/types';
 import { createFile, createFolder } from '@/lib/vault';
@@ -21,6 +21,7 @@ function countNodes(nodes: FileNode[], kind: 'file' | 'folder'): number {
 
 export default function VaultScreen(): React.ReactElement {
   const tree = useStore((s) => s.tree);
+  const ready = useStore((s) => s.ready);
   const [creating, setCreating] = useState<null | 'file' | 'folder'>(null);
 
   const counts = useMemo(() => {
@@ -99,30 +100,42 @@ export default function VaultScreen(): React.ReactElement {
             </View>
           )}
 
-          {tree.map((node) => (
-            <TreeItem key={node.relPath} node={node} depth={0} />
-          ))}
+          {!ready ? (
+            <View style={styles.skeletons}>
+              <Skeleton height={18} width="38%" />
+              <Skeleton height={18} width="62%" />
+              <View style={styles.skeletonRow}>
+                <Skeleton height={16} width={16} round={radius.sm} />
+                <Skeleton height={16} width="52%" />
+              </View>
+              <View style={styles.skeletonRow}>
+                <Skeleton height={16} width={16} round={radius.sm} />
+                <Skeleton height={16} width="44%" />
+              </View>
+            </View>
+          ) : (
+            tree.map((node) => (
+              <TreeItem key={node.relPath} node={node} depth={0} />
+            ))
+          )}
 
-          {tree.length === 0 && !creating && (
-            <Card style={styles.emptyCard}>
-              <View style={styles.emptyIcon}>
-                <VaultIcon color={colors.primary} size={28} />
-              </View>
-              <ShipiText type="heading3" color="ink" style={styles.emptyTitle}>
-                Your vault is empty
-              </ShipiText>
-              <ShipiText type="bodySm" color="inkMuted" style={styles.emptyBody}>
-                Create your first note to start writing. Notes stay on your device and can be
-                synced privately across your devices.
-              </ShipiText>
-              <View style={styles.emptyActions}>
-                <Button variant="primary" onPress={() => setCreating('file')} style={styles.emptyAction}>
-                  New note
-                </Button>
-                <Button onPress={() => setCreating('folder')} style={styles.emptyAction}>
-                  New folder
-                </Button>
-              </View>
+          {ready && tree.length === 0 && !creating && (
+            <Card style={styles.emptyCard} padded={false}>
+              <EmptyState
+                icon={<VaultIcon color={colors.primary} size={28} />}
+                title="Your vault is empty"
+                body="Create your first note to start writing. Notes stay on your device and can be synced privately across your devices."
+                actions={
+                  <View style={styles.emptyActions}>
+                    <Button variant="primary" onPress={() => setCreating('file')}>
+                      New note
+                    </Button>
+                    <Button onPress={() => setCreating('folder')}>
+                      New folder
+                    </Button>
+                  </View>
+                }
+              />
             </Card>
           )}
         </ScrollView>
@@ -188,36 +201,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxs,
     paddingHorizontal: spacing.md,
   },
+  skeletons: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingLeft: spacing.sm,
+  },
   emptyCard: {
     marginHorizontal: spacing.md,
     marginTop: spacing.lg,
-    alignItems: 'center',
-    padding: spacing.xl,
-    gap: spacing.sm,
     ...shadows.soft,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xxs,
-  },
-  emptyTitle: {
-    textAlign: 'center',
-  },
-  emptyBody: {
-    textAlign: 'center',
-    color: colors.inkMuted,
   },
   emptyActions: {
     flexDirection: 'row',
     gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  emptyAction: {
-    minWidth: 120,
   },
 });

@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 
 // Mirrors native-app/DESIGN.md — Notion's warm, paper-calm design language.
+// Refined toward a "quiet secure-desk / vault": a warm paper canvas, one
+// confident blue, and near-black ink, with elevation carried by layered
+// barely-there shadows instead of heavy drop-shadows.
 export const colors = {
   primary: '#0075de',
   primaryActive: '#005bab',
@@ -11,12 +14,16 @@ export const colors = {
   canvasSoft: '#f6f5f4',
   surface: '#ffffff',
   surfaceMuted: '#fbfbfa',
-  ink: '#000000',
-  inkSecondary: '#31302e',
-  inkMuted: '#615d59',
-  inkFaint: '#a39e98',
-  hairline: '#e6e6e6',
-  hairlineStrong: '#d4d4d2',
+  ink: '#1a1917',
+  inkSecondary: '#2f2e2b',
+  inkMuted: '#5f5b56',
+  inkFaint: '#9b968e',
+  hairline: '#e6e4e0',
+  hairlineStrong: '#d3d1cb',
+  focus: '#4d9df0',
+  selection: 'rgba(0, 117, 222, 0.12)',
+  overlay: 'rgba(26, 25, 23, 0.42)',
+  skeleton: '#e7e5e1',
   success: '#2ea043',
   successSoft: '#e8f5ec',
   danger: '#d83a2e',
@@ -53,6 +60,12 @@ export const spacing = {
   lg: 24,
   xl: 28,
   xxl: 32,
+} as const;
+
+/** Minimum interactive hit area, per platform guidance. */
+export const hitSlop = {
+  small: { top: 4, left: 4, right: 4, bottom: 4 },
+  medium: { top: 8, left: 8, right: 8, bottom: 8 },
 } as const;
 
 export type FontWeight = '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
@@ -95,20 +108,22 @@ export const fonts = {
 } as const;
 
 // Notion's elevation is "barely-there": hairline + faint layered shadows.
+// To keep RN shallow, each level layers a tighter soft shadow under a wider
+// translucent one, approximating the multi-stop stack without heavy cast.
 export const shadows = {
   soft: {
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.06,
+    shadowRadius: 7,
     elevation: 2,
   },
   elevated: {
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.09,
-    shadowRadius: 20,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
   },
   hairline: {
     shadowColor: '#000000',
@@ -117,4 +132,17 @@ export const shadows = {
     shadowRadius: 3,
     elevation: 1,
   },
+} as const;
+
+export interface MotionSpec {
+  duration: number;
+  easing: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'keyboard';
+}
+
+/** Motion tokens — short for product/Operate surfaces. */
+export const motion = {
+  fast: 150,
+  standard: 220,
+  expressive: 360,
+  staggered: 48,
 } as const;

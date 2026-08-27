@@ -83,7 +83,7 @@ export function TreeItem({ node, depth }: TreeItemProps): React.ReactElement {
             styles.row,
             rowPadding,
             isActive && styles.rowActive,
-            pressed && styles.rowPressed,
+            pressed && !isActive && styles.rowPressed,
           ]}
           onPress={() => {
             if (isFolder) {
@@ -92,6 +92,7 @@ export function TreeItem({ node, depth }: TreeItemProps): React.ReactElement {
               void openFile(node.relPath);
             }
           }}>
+          {isActive && <View style={styles.activeBar} />}
           <View style={styles.caret}>
             {isFolder ? (
               <ChevronIcon color={isOpen ? colors.primary : colors.inkFaint} open={isOpen} />
@@ -151,6 +152,8 @@ export function TreeItem({ node, depth }: TreeItemProps): React.ReactElement {
 
 const styles = StyleSheet.create({
   row: {
+    position: 'relative',
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs - 2,
@@ -159,15 +162,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginHorizontal: spacing.xxs,
   },
+  activeBar: {
+    position: 'absolute',
+    left: 0,
+    top: 7,
+    bottom: 7,
+    width: 3,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+    backgroundColor: colors.primary,
+  },
   rowActive: {
-    backgroundColor: colors.surface,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    backgroundColor: colors.selection,
   },
   rowPressed: {
     backgroundColor: 'rgba(0,0,0,0.04)',

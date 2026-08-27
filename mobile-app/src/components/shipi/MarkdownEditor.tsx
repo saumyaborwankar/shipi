@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TextInput, ViewStyle, StyleProp } from 'react-native';
 import { colors, fonts, spacing } from '@/theme/tokens';
 
@@ -9,11 +9,15 @@ interface MarkdownEditorProps {
 }
 
 export function MarkdownEditor({ value, onChangeText, style }: MarkdownEditorProps): React.ReactElement {
+  const [focused, setFocused] = useState(false);
+
   return (
     <TextInput
-      style={[styles.editor, style]}
+      style={[styles.editor, focused && styles.editorFocused, style]}
       value={value}
       onChangeText={onChangeText}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       multiline
       autoCapitalize="none"
       autoCorrect={false}
@@ -35,5 +39,8 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontFamily: fonts.mono,
     backgroundColor: colors.surface,
+  },
+  editorFocused: {
+    backgroundColor: colors.surfaceMuted,
   },
 });

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  NativeSyntheticEvent,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
+  TextInputFocusEventData,
   TextInputProps,
   TextStyle,
   View,
@@ -15,7 +19,15 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, fonts, radius, spacing, typography, type ColorToken } from '@/theme/tokens';
+import {
+  colors,
+  fonts,
+  shadows,
+  radius,
+  spacing,
+  typography,
+  type ColorToken,
+} from '@/theme/tokens';
 
 const PRESS_IN = { damping: 20, stiffness: 340, mass: 0.5 };
 const PRESS_OUT = { damping: 14, stiffness: 220, mass: 0.6 };
@@ -73,6 +85,7 @@ interface ButtonProps {
   onPress?: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
+  loading?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   leading?: React.ReactElement;
@@ -94,32 +107,42 @@ const BTN_TEXT: Record<ButtonVariant, ColorToken> = {
   soft: 'primary',
 };
 
-export function Button({ children, onPress, variant = 'secondary', disabled, style, accessibilityLabel, leading }: ButtonProps): React.ReactElement {
+export function Button({ children, onPress, variant = 'secondary', disabled, loading, style, accessibilityLabel, leading }: ButtonProps): React.ReactElement {
   const { animStyle, pressIn, pressOut } = usePressScale(0.96, 0.85);
+  const isDisabled = disabled || loading;
 
   return (
     <AnimatedPressable
       onPress={onPress}
       onPressIn={pressIn}
       onPressOut={pressOut}
-      disabled={disabled}
+      disabled={isDisabled}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         styles.btn,
         BTN_BASE[variant],
         variant === 'primary' && styles.btnPrimary,
-        disabled && styles.btnDisabled,
+        isDisabled && styles.btnDisabled,
         animStyle,
         style,
       ]}>
       {leading}
-      <ShipiText
-        type="button"
-        color={BTN_TEXT[variant]}
-        style={[styles.btnText, leading ? styles.btnTextWithIcon : null]}>
-        {children}
-      </ShipiText>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' ? colors.onPrimary : colors.inkMuted}
+          style={styles.btnSpinner}
+        />
+      ) : (
+        <ShipiText
+          type="button"
+          color={variant === 'ghost' && isDisabled ? 'inkFaint' : BTN_TEXT[variant]}
+          style={[styles.btnText, leading ? styles.btnTextWithIcon : null]}>
+          {children}
+        </ShipiText>
+      )}
     </AnimatedPressable>
   );
 }
@@ -179,11 +202,12 @@ interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  elevated?: boolean;
 }
 
-export function Card({ children, style, padded = true }: CardProps): React.ReactElement {
+export function Card({ children, style, padded = true, elevated = false }: CardProps): React.ReactElement {
   return (
-    <View style={[styles.card, padded && styles.cardPadded, style]}>
+    <View style={[styles.card, padded && styles.cardPadded, elevated && styles.cardElevated, style]}>
       {children}
     </View>
   );
@@ -199,14 +223,14 @@ interface SegmentedControlProps<T extends string> {
 
 export function SegmentedControl<T extends string>({ options, value, onChange, labels, style }: SegmentedControlProps<T>): React.ReactElement {
   return (
-    <View style={[styles.seg, style]}>
+    <View style={[styles.seg, style]} accessibilityRole="tablist">
       {options.map((option) => {
         const active = option === value;
         return (
           <Pressable
             key={option}
             onPress={() => onChange(option)}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             style={[styles.segSegment, active && styles.segSegmentActive]}>
             <ShipiText type="caption" color={active ? 'primary' : 'inkMuted'} style={{ fontWeight: active ? '600' : '500' }}>
@@ -238,9 +262,13 @@ export function Pill({ children, color = 'inkMuted', soft = true, style }: PillP
 
 interface FieldProps extends TextInputProps {
   label?: string;
+  error?: string;
+  hint?: string;
 }
 
-export function Field({ label, style, ...props }: FieldProps): React.ReactElement {
+export function Field({ label, error, hint, style, onFocus, onBlur, ...props }: FieldProps): React.ReactElement {
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={styles.fieldWrap}>
       {label ? (
@@ -250,9 +278,69 @@ export function Field({ label, style, ...props }: FieldProps): React.ReactElemen
       ) : null}
       <TextInput
         {...props}
-        style={[styles.field, style]}
+        onFocus={(e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+        style={[
+          styles.field,
+          focused && styles.fieldFocused,
+          error && styles.fieldError,
+          style,
+        ]}
         placeholderTextColor={colors.inkFaint}
       />
+      {error ? (
+        <ShipiText type="caption" color="danger" style={styles.fieldMsg}>
+          {error}
+        </ShipiText>
+      ) : hint ? (
+        <ShipiText type="caption" color="inkMuted" style={styles.fieldMsg}>
+          {hint}
+        </ShipiText>
+      ) : null}
+    </View>
+  );
+}
+
+interface SkeletonProps {
+  width?: number | `${number}%`;
+  height?: number;
+  round?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+/** Static skeleton block — use a few of these to frame loading content. */
+export function Skeleton({ width = '100%', height = 14, round = radius.sm, style }: SkeletonProps): React.ReactElement {
+  return <View style={[styles.skeleton, { width, height, borderRadius: round }, style]} />;
+}
+
+interface EmptyStateProps {
+  icon?: React.ReactElement;
+  title: string;
+  body?: string;
+  actions?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
+/** Teaches the interface instead of saying "nothing here". */
+export function EmptyState({ icon, title, body, actions, style }: EmptyStateProps): React.ReactElement {
+  return (
+    <View style={[styles.empty, style]}>
+      {icon ? <View style={styles.emptyIcon}>{icon}</View> : null}
+      <ShipiText type="heading3" color="ink" style={styles.emptyTitle}>
+        {title}
+      </ShipiText>
+      {body ? (
+        <ShipiText type="bodySm" color="inkMuted" style={styles.emptyBody}>
+          {body}
+        </ShipiText>
+      ) : null}
+      {actions ? <View style={styles.emptyActions}>{actions}</View> : null}
     </View>
   );
 }
@@ -267,6 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: spacing.xs - 2,
+    minHeight: 40,
   },
   btnPrimary: {
     borderRadius: radius.full,
@@ -281,6 +370,9 @@ const styles = StyleSheet.create({
     lineHeight: typography.button.lineHeight,
   },
   btnTextWithIcon: {
+    marginLeft: spacing.xxs,
+  },
+  btnSpinner: {
     marginLeft: spacing.xxs,
   },
   iconBtn: {
@@ -301,6 +393,13 @@ const styles = StyleSheet.create({
   },
   cardPadded: {
     padding: spacing.md,
+  },
+  cardElevated: {
+    ...shadows.soft,
+    ...Platform.select({
+      android: { elevation: 3 },
+      default: {},
+    }),
   },
   seg: {
     flexDirection: 'row',
@@ -347,5 +446,48 @@ const styles = StyleSheet.create({
     color: colors.ink,
     backgroundColor: colors.surface,
     fontFamily: fonts.sans,
+  },
+  fieldFocused: {
+    borderColor: colors.focus,
+    shadowColor: colors.focus,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  fieldError: {
+    borderColor: colors.danger,
+  },
+  fieldMsg: {
+    marginTop: 1,
+  },
+  skeleton: {
+    backgroundColor: colors.skeleton,
+  },
+  empty: {
+    alignItems: 'center',
+    padding: spacing.xl,
+    gap: spacing.xs,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxs,
+  },
+  emptyTitle: {
+    textAlign: 'center',
+  },
+  emptyBody: {
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  emptyActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
 });
