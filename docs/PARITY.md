@@ -41,6 +41,7 @@ Legend: ✅ implemented · ⚠️ differs (documented) · ❌ missing
 | VMK (32-byte key) generated + stored | ✅ `sync-state.json` (userData) | ✅ `expo-secure-store` | Mobile keeps key/token in the secure keychain. |
 | Key fingerprint = SHA-256(VMK) | ✅ | ✅ | |
 | Sign up / sign in (`POST /auth/register`, `/auth/login`) | ✅ | ✅ | |
+| Sign in with Google (`/auth/google` redirect flow) | ✅ modal `BrowserWindow` + loopback callback | ✅ `WebBrowser.openAuthSessionAsync` + `shipi://auth` scheme | Same email = same account; accounts link across providers. |
 | Auto sign-out on 401 ("Session expired") | ✅ | ✅ | |
 | Vault lookup-or-create by fingerprint (`GET/POST /vaults`) | ✅ | ✅ | |
 | Push (`PUT /vaults/:id/files`, `baseVersion`) | ✅ | ✅ | |

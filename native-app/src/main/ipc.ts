@@ -4,6 +4,7 @@ import * as fsService from './fsService';
 import { getVaultName, getVaultRoot } from './vault';
 import {
   getSyncStatus,
+  syncGoogleSignIn,
   syncNow,
   syncPush,
   syncSignIn,
@@ -50,6 +51,8 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.syncSignIn, (_e, email: string, password: string) =>
     syncSignIn(email, password),
   );
+
+  ipcMain.handle(IPC.syncGoogleSignIn, () => syncGoogleSignIn());
 
   ipcMain.handle(IPC.syncSignOut, () => syncSignOut());
 

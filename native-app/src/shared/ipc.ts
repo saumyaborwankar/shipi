@@ -29,6 +29,7 @@ export const IPC = {
   syncStatus: 'shipi:sync:status',
   syncSignUp: 'shipi:sync:sign-up',
   syncSignIn: 'shipi:sync:sign-in',
+  syncGoogleSignIn: 'shipi:sync:google-sign-in',
   syncSignOut: 'shipi:sync:sign-out',
   syncNow: 'shipi:sync:now',
   syncPush: 'shipi:sync:push',
@@ -53,6 +54,7 @@ export interface ShipiApi {
   syncStatus: () => Promise<SyncStatus>;
   syncSignUp: (email: string, password: string) => Promise<SyncStatus>;
   syncSignIn: (email: string, password: string) => Promise<SyncStatus>;
+  syncSignInWithGoogle: () => Promise<SyncStatus>;
   syncSignOut: () => Promise<SyncStatus>;
   syncNow: () => Promise<SyncStatus>;
   syncPush: () => Promise<SyncStatus>;

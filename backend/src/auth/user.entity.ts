@@ -3,7 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
+
+export type AuthProvider = 'password' | 'google';
 
 @Entity('users')
 export class User {
@@ -13,8 +16,15 @@ export class User {
   @Column({ type: 'text', unique: true })
   email!: string;
 
-  @Column({ type: 'text' })
-  passwordHash!: string;
+  @Column({ type: 'text', nullable: true })
+  passwordHash!: string | null;
+
+  @Column({ type: 'text', default: 'password' })
+  authProvider!: AuthProvider;
+
+  @Index()
+  @Column({ type: 'text', nullable: true })
+  googleSub!: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;

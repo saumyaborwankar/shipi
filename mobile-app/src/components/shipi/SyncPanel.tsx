@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Keyboard, StyleSheet, View } from 'react-native';
 import { useStore } from '@/store';
 import { Button, Card, Field, Pill, ShipiText } from './ui';
-import { LockIcon, SyncIcon, SignOutIcon } from './Icons';
+import { LockIcon, SyncIcon, SignOutIcon, GoogleIcon } from './Icons';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 function formatTime(iso: string | null): string {
@@ -105,6 +105,21 @@ export function SyncPanel(): React.ReactElement {
           </View>
         </View>
         <View style={styles.form}>
+          <Button
+            variant="secondary"
+            onPress={() => void useStore.getState().signInWithGoogle()}
+            disabled={submitting}
+            style={styles.googleBtn}
+            leading={<GoogleIcon size={16} />}>
+            Continue with Google
+          </Button>
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <ShipiText type="caption" color="inkFaint">
+              or
+            </ShipiText>
+            <View style={styles.dividerLine} />
+          </View>
           <Field
             label="Email"
             value={email}
@@ -210,6 +225,19 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.sm,
+  },
+  googleBtn: {
+    borderRadius: radius.full,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.hairline,
   },
   submit: {
     marginTop: spacing.xxs,

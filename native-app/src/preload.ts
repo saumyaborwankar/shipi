@@ -26,6 +26,7 @@ const api: ShipiApi = {
   syncStatus: () => ipcRenderer.invoke(IPC.syncStatus),
   syncSignUp: (email, password) => ipcRenderer.invoke(IPC.syncSignUp, email, password),
   syncSignIn: (email, password) => ipcRenderer.invoke(IPC.syncSignIn, email, password),
+  syncSignInWithGoogle: () => ipcRenderer.invoke(IPC.syncGoogleSignIn),
   syncSignOut: () => ipcRenderer.invoke(IPC.syncSignOut),
   syncNow: () => ipcRenderer.invoke(IPC.syncNow),
   syncPush: () => ipcRenderer.invoke(IPC.syncPush),

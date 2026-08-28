@@ -64,6 +64,20 @@ export function SyncPanel(): React.ReactElement {
           <div className="sync-panel__title">
             {mode === 'signin' ? 'Sign in to sync' : 'Create account'}
           </div>
+          <button
+            className="btn sync-panel__google-btn"
+            type="button"
+            onClick={() => void useStore.getState().signInWithGoogle()}
+            disabled={submitting}
+          >
+            <span className="google-g">G</span>
+            Continue with Google
+          </button>
+          <div className="sync-panel__divider">
+            <span className="sync-panel__divider-line" />
+            <span className="sync-panel__divider-label">or</span>
+            <span className="sync-panel__divider-line" />
+          </div>
           <input
             className="inline-input"
             type="email"

@@ -320,6 +320,66 @@ button {
   cursor: default;
 }
 
+.sync-panel__google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-color: #dadce0;
+  background: #ffffff;
+  color: #3c4043;
+  font-weight: 600;
+}
+
+.sync-panel__google-btn:hover {
+  background: #f8f9fa;
+}
+
+.sync-panel__google-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.google-g {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -45deg,
+    #ea4335 0deg 90deg,
+    #fbbc05 90deg 180deg,
+    #34a853 180deg 270deg,
+    #4285f4 270deg 360deg
+  );
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sync-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-panel__divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.sync-panel__divider-label {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .sync-panel__message {
   font-size: 12px;
   color: var(--ink-muted);

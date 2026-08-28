@@ -39,18 +39,51 @@ Every route below (except `/auth/*`) requires the bearer token. Requests without
 ### Endpoints
 
 ```
-POST /auth/register   { "email": "user@example.com", "password": "hunter2hunter2" }
-POST /auth/login      { "email": "user@example.com", "password": "hunter2hunter2" }
-GET  /auth/me         (auth required) -> { "id", "email" }
+POST /auth/register          { "email": "user@example.com", "password": "hunter2hunter2" }
+POST /auth/login             { "email": "user@example.com", "password": "hunter2hunter2" }
+GET  /auth/me                (auth required) -> { "id", "email" }
+GET  /auth/google            browser redirect flow -> lands on redirect_uri with ?token&email
+GET  /auth/google/callback   never called by the client directly (Google → backend)
 ```
 
-Response (both register and login):
+Response (register, login and the Google flow):
 
 ```json
 {
   "accessToken": "eyJhbGciOi...",
   "user": { "id": "uuid", "email": "user@example.com" }
 }
+```
+
+### Google sign-in (`GET /auth/google`)
+
+The backend owns the Google OAuth client (secret never leaves the server). The client just opens **its own** `redirect_uri` → backend flow:
+
+1. Client opens `<base>/auth/google?redirect_uri=<urlencoded uri>` in a browser tab/webview.
+   `redirect_uri` must be in the server's `APP_REDIRECT_URIS` allowlist (exact match), or a `127.0.0.1`/`localhost` loopback URI with a port when `GOOGLE_ALLOW_LOOPBACK=true` (dev only — used by the Electron app's in-process callback server).
+2. Backend validates the URI, signs a short-lived **state** JWT (with a PKCE verifier), and 302s to Google.
+3. Google → `GET /auth/google/callback?code&state`. Backend exchanges the code (server-side client secret), verifies the ID token against `https://oauth2.googleapis.com/tokeninfo`, find-or-creates a user by email, and issues the same Shipi JWT.
+4. Backend 302s to the client's `redirect_uri` as:
+   `redirect_uri?token=<accessToken>&email=<email>`
+   On failure: `redirect_uri?error=<message>`.
+
+**Client rules for Google**
+
+- **Electron app:** spins up a loopback server on `127.0.0.1` (ephemeral port) as the `redirect_uri`, opens a modal `BrowserWindow` at the `/auth/google` URL, and reads `token`/`email`/`error` off the callback. No protocol registration needed.
+- **Mobile app:** `WebBrowser.openAuthSessionAsync(base + /auth/google?redirect_uri=..., Linking.createURL('auth'))`, then parses `token`/`email`/`error` from the returned URL.
+- **Web (mobile app):** `Linking.createURL('auth')` resolves to `<origin>/auth`; add that origin to `APP_REDIRECT_URIS`.
+- Same email = same account: a password-created account is **linked** when the same email signs in via Google (both methods work afterwards). A Google-only account has no password; `POST /auth/login` and `/auth/register` respond with a hint to use Google instead.
+- Google redirect URIs in the mobile app use the app scheme (`shipi://auth`) — the scheme is set in `app.json` (`expo.scheme`).
+
+### Server env for Google
+
+```
+GOOGLE_CLIENT_ID=<client id>
+GOOGLE_CLIENT_SECRET=<client secret>
+SHIPI_PUBLIC_URL=http://localhost:3001            # used to build the callback if unset
+GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback   # also register this in the Google Console
+APP_REDIRECT_URIS=shipi://auth,http://localhost:8081/auth
+GOOGLE_ALLOW_LOOPBACK=true                        # FALSE in production
 ```
 
 ### Client rules
@@ -193,6 +226,8 @@ All routes use `Authorization: Bearer <token>` unless noted. Base path prefix: n
 |---|---|---|---|
 | `POST` | `/auth/register` | `{ email, password }` | `201 { accessToken, user }` |
 | `POST` | `/auth/login` | `{ email, password }` | `201 { accessToken, user }` |
+| `GET` | `/auth/google` | `?redirect_uri=` | `302 → Google` |
+| `GET` | `/auth/google/callback` | – | `302 → redirect_uri?token&email` |
 | `GET` | `/auth/me` | – | `200 { id, email }` |
 
 ### 6.2 Vaults

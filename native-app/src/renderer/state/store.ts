@@ -21,6 +21,7 @@ interface ShipiState {
   subscribeSync: () => () => void;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
   syncPush: () => Promise<void>;
@@ -93,6 +94,11 @@ export const useStore = create<ShipiState>((set, get) => ({
 
   signIn: async (email, password) => {
     const sync = await window.shipi.syncSignIn(email, password);
+    set({ sync });
+  },
+
+  signInWithGoogle: async () => {
+    const sync = await window.shipi.syncSignInWithGoogle();
     set({ sync });
   },
 

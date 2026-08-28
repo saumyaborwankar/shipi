@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import * as crypto from 'node:crypto';
 import * as dotenv from 'dotenv';
 import * as fs from 'node:fs';
+import * as http from 'node:http';
 import * as path from 'node:path';
 import { IPC } from '../shared/ipc';
 import { SyncFileEntry, SyncStatus } from '../shared/sync';
@@ -319,6 +320,124 @@ async function signOutInternal(message = 'Signed out'): Promise<void> {
   emitStatus(message);
 }
 
+/* ── Google sign-in ──────────────────────────────────────── */
+
+const GOOGLE_AUTH_TIMEOUT_MS = 10 * 60 * 1000;
+
+function googleAuthFlow(): Promise<SyncStatus> {
+  return new Promise<SyncStatus>((resolve) => {
+    let win: BrowserWindow | null = null;
+    let server: http.Server | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let settled = false;
+
+    const cleanup = (): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (server) {
+        server.close();
+      }
+      if (win && !win.isDestroyed()) {
+        win.destroy();
+      }
+    };
+
+    const finish = (message: string): void => {
+      emitStatus(message);
+      resolve(getStatus(message));
+    };
+
+    const complete = async (url: URL): Promise<void> => {
+      cleanup();
+      const error = url.searchParams.get('error');
+      if (error) {
+        throw new ApiError(`Google sign-in failed: ${error}`, 400);
+      }
+      const token = url.searchParams.get('token');
+      const email = url.searchParams.get('email');
+      if (!token || !email) {
+        throw new ApiError('Google sign-in did not return a token', 400);
+      }
+      state.token = token;
+      state.email = email;
+      if (!state.vaultKeyB64) {
+        state.vaultKeyB64 = generateVaultKey().toString('base64');
+      }
+      await ensureRemoteVault();
+      saveState();
+      finish(`Signed in as ${email}`);
+    };
+
+    server = http.createServer((req, res) => {
+      const url = new URL(req.url ?? '/', 'http://127.0.0.1');
+      if (url.pathname !== '/shipi-callback') {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(
+        '<html><body style="font-family:sans-serif;display:grid;place-items:center;height:100vh;color:#555">You can close this window and return to Shipi.</body></html>',
+      );
+      complete(url).catch((e: unknown) => {
+        const message =
+          e instanceof ApiError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : 'Google sign-in failed';
+        saveState();
+        finish(message);
+      });
+    });
+
+    timer = setTimeout(() => {
+      cleanup();
+      finish('Google sign-in timed out');
+    }, GOOGLE_AUTH_TIMEOUT_MS);
+
+    server.listen(0, '127.0.0.1', () => {
+      const address = server?.address();
+      if (address === null || typeof address === 'string') {
+        cleanup();
+        finish('Could not start the local callback server');
+        return;
+      }
+      const redirectUri = `http://127.0.0.1:${address.port}/shipi-callback`;
+      const startUrl = `${state.apiUrl}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+      win = new BrowserWindow({
+        width: 520,
+        height: 660,
+        resizable: true,
+        title: 'Sign in with Google',
+        autoHideMenuBar: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+      win.on('closed', () => {
+        if (!settled) {
+          cleanup();
+          finish('Google sign-in cancelled');
+        }
+      });
+      win.loadURL(startUrl).catch(() => {
+        if (!settled) {
+          cleanup();
+          finish('Could not reach the Shipi backend');
+        }
+      });
+    });
+  });
+}
+
 /* ── Push / Pull ────────────────────────────────────────── */
 
 async function pushOnly(): Promise<SyncStatus> {
@@ -496,6 +615,10 @@ export function syncSignUp(email: string, password: string): Promise<SyncStatus>
 
 export function syncSignIn(email: string, password: string): Promise<SyncStatus> {
   return runSynchronized(() => authenticate('login', email, password));
+}
+
+export function syncGoogleSignIn(): Promise<SyncStatus> {
+  return runSynchronized(() => googleAuthFlow());
 }
 
 export function syncSignOut(): Promise<SyncStatus> {

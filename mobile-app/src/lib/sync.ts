@@ -10,6 +10,8 @@ import {
 import { secureDelete, secureGet, secureSet, readStateFile, writeStateFile } from './storage';
 import type { SyncFileEntry, SyncStatus } from './types';
 import { buildTree, createFile, fileExists, getVaultName, readFile, writeFile } from './vault';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 
 interface PersistedState {
   apiUrl: string;
@@ -269,6 +271,60 @@ async function signOutInternal(message = 'Signed out'): Promise<void> {
   emitStatus(message);
 }
 
+/* ── Google sign-in ─────────────────────────────────────── */
+
+function parseQuery(url: string): Record<string, string> {
+  const start = url.indexOf('?');
+  if (start === -1) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const pair of url.slice(start + 1).split('&')) {
+    const eq = pair.indexOf('=');
+    if (eq === -1) {
+      continue;
+    }
+    out[decodeURIComponent(pair.slice(0, eq))] = decodeURIComponent(
+      pair.slice(eq + 1),
+    );
+  }
+  return out;
+}
+
+async function signInWithGoogle(): Promise<SyncStatus> {
+  const redirectUri = Linking.createURL('auth');
+  const authUrl = `${state.apiUrl}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+  let result;
+  try {
+    result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+  } catch (e) {
+    return getStatus(e instanceof Error ? e.message : 'Google sign-in failed');
+  }
+
+  if (result.type !== 'success' || !result.url) {
+    return getStatus('Google sign-in cancelled');
+  }
+
+  const params = parseQuery(result.url);
+  if (params.error) {
+    return getStatus(`Google sign-in failed: ${params.error}`);
+  }
+  if (!params.token || !params.email) {
+    return getStatus('Google sign-in did not return a token');
+  }
+
+  token = params.token;
+  state.email = params.email;
+  if (!vaultKeyB64) {
+    vaultKeyB64 = bytesToBase64(generateVaultKey());
+  }
+  await ensureRemoteVault();
+  await saveState();
+  emitStatus(`Signed in as ${params.email}`);
+  return getStatus(`Signed in as ${params.email}`);
+}
+
 /* ── Push / Pull ────────────────────────────────────────── */
 
 async function pushOnly(): Promise<SyncStatus> {
@@ -446,6 +502,10 @@ export function syncSignUp(email: string, password: string): Promise<SyncStatus>
 
 export function syncSignIn(email: string, password: string): Promise<SyncStatus> {
   return runSynchronized(() => authenticate('login', email, password));
+}
+
+export function syncGoogleSignIn(): Promise<SyncStatus> {
+  return runSynchronized(() => signInWithGoogle());
 }
 
 export function syncSignOut(): Promise<SyncStatus> {

@@ -83,5 +83,86 @@ describe('AuthService', () => {
         service.login({ email: 'a@b.com', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
     });
+
+    it('tells a Google-only account to use Google sign-in', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        passwordHash: null,
+      });
+      await expect(
+        service.login({ email: 'a@b.com', password: 'whatever' }),
+      ).rejects.toThrow(/Google/);
+    });
+  });
+
+  describe('googleLogin', () => {
+    it('creates a Google account when the email is new', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.create.mockImplementation((dto: Partial<User>) => dto);
+      let savedUser: Partial<User> | undefined;
+      userRepository.save.mockImplementation((user: Partial<User>) => {
+        savedUser = user;
+        return Promise.resolve({ id: 'user-1', ...user });
+      });
+
+      const result = await service.googleLogin({
+        email: 'A@B.com',
+        googleSub: 'sub-123',
+      });
+
+      expect(savedUser).toMatchObject({
+        email: 'a@b.com',
+        passwordHash: null,
+        authProvider: 'google',
+        googleSub: 'sub-123',
+      });
+      expect(result.accessToken).toBe('signed-token');
+      expect(result.user.email).toBe('a@b.com');
+    });
+
+    it('links googleSub onto an existing password account', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        passwordHash: 'hash',
+        authProvider: 'password',
+        googleSub: null,
+      });
+      let savedUser: Partial<User> | undefined;
+      userRepository.save.mockImplementation((user: Partial<User>) => {
+        savedUser = user;
+        return Promise.resolve(user);
+      });
+
+      const result = await service.googleLogin({
+        email: 'a@b.com',
+        googleSub: 'sub-123',
+      });
+
+      expect(savedUser).toMatchObject({
+        id: 'user-1',
+        googleSub: 'sub-123',
+      });
+      expect(result.accessToken).toBe('signed-token');
+    });
+
+    it('does not rewrite the account when googleSub already matches', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        passwordHash: null,
+        authProvider: 'google',
+        googleSub: 'sub-123',
+      });
+
+      const result = await service.googleLogin({
+        email: 'a@b.com',
+        googleSub: 'sub-123',
+      });
+
+      expect(userRepository.save).not.toHaveBeenCalled();
+      expect(result.accessToken).toBe('signed-token');
+    });
   });
 });
