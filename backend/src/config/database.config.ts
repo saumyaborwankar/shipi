@@ -12,6 +12,8 @@ export const getDatabaseConfig = (
   database: configService.get<string>('SUPABASE_DB'),
   autoLoadEntities: true,
   synchronize: false,
+  migrations: ['dist/migrations/*.js'],
+  migrationsRun: true,
   ssl: {
     rejectUnauthorized: false,
   },
